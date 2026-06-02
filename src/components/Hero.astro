@@ -1,0 +1,124 @@
+---
+import DownloadButton from "./DownloadButton.astro";
+
+interface Props {
+  slug: string;
+  eyebrow: string;
+  title: string;
+  lead: string;
+  image?: string;
+  imageAlt?: string;
+}
+
+const { slug, eyebrow, title, lead, image, imageAlt = "" } = Astro.props;
+---
+
+<header class="hero section" id={slug} data-slug={slug}>
+  <div class="hero__inner">
+    <span class="eyebrow">{eyebrow}</span>
+    <h1 class="hero__title">{title}</h1>
+    <p class="hero__lead">{lead}</p>
+    <div class="hero__actions">
+      <DownloadButton href="/eco-paseo-san-francisco.pdf" label="Descargar propuesta" />
+      <a href="#situacion-actual" class="hero__scroll">Leer la propuesta ↓</a>
+    </div>
+    <div class="hero__meta">
+      <span>La Rioja, Argentina</span>
+      <span aria-hidden="true">·</span>
+      <span>Av. San Francisco km 3,5 — Zona del Pesebre</span>
+    </div>
+  </div>
+  {
+    image && (
+      <div class="hero__media">
+        <img src={image} alt={imageAlt} loading="eager" fetchpriority="high" />
+      </div>
+    )
+  }
+</header>
+
+<style>
+  .hero {
+    padding: clamp(4rem, 10vw, 8rem) 0 clamp(3rem, 6vw, 5rem);
+    background: var(--color-bg);
+    position: relative;
+  }
+
+  .hero__inner {
+    width: 100%;
+    max-width: var(--max-wide);
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+  }
+
+  .hero__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-hero);
+    line-height: 1.05;
+    font-weight: 600;
+    margin: 0 0 1.5rem;
+    letter-spacing: -0.02em;
+    max-width: 18ch;
+  }
+
+  .hero__lead {
+    font-family: var(--font-body);
+    font-size: clamp(1.125rem, 2vw, 1.375rem);
+    line-height: 1.6;
+    color: var(--color-fg-muted);
+    max-width: 56ch;
+    margin: 0 0 2.5rem;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 2.5rem;
+    align-items: center;
+    margin-bottom: 3rem;
+  }
+
+  .hero__scroll {
+    font-family: var(--font-ui);
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    color: var(--color-fg-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-rule);
+    padding-bottom: 2px;
+  }
+
+  .hero__scroll:hover {
+    color: var(--color-fg);
+    border-color: var(--color-fg);
+  }
+
+  .hero__meta {
+    font-family: var(--font-ui);
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    color: var(--color-fg-soft);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+  }
+
+  .hero__media {
+    width: 100%;
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+    max-width: var(--max-wide);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero__media img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: var(--radius-soft);
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+</style>

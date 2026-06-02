@@ -1,0 +1,93 @@
+---
+import DownloadButton from "./DownloadButton.astro";
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__top">
+      <div class="footer__lead">
+        <p class="eyebrow">Invitación al diálogo</p>
+        <h2 class="footer__title">Construyamos juntos este espacio</h2>
+        <p class="footer__text">
+          Ponemos esta propuesta a disposición de la Municipalidad de La Rioja, los vecinos y las
+          instituciones interesadas. El documento completo detalla el proyecto, sus etapas y los
+          compromisos asumidos para la recuperación del predio de Av. San Francisco.
+        </p>
+        <div class="footer__actions">
+          <DownloadButton href="/eco-paseo-san-francisco.pdf" label="Descargar propuesta en PDF" />
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span class="footer__brand">Eco Paseo San Francisco</span>
+      <span class="footer__sep" aria-hidden="true">·</span>
+      <span>La Rioja, Argentina</span>
+      <span class="footer__sep" aria-hidden="true">·</span>
+      <span>&copy; {year}</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--color-bg-dark);
+    color: var(--color-bg);
+    padding: clamp(5rem, 8vw, 7rem) 0 2rem;
+    margin-top: var(--space-section);
+  }
+
+  .footer__inner {
+    width: 100%;
+    max-width: var(--max-wide);
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+  }
+
+  .footer__lead :global(.eyebrow) {
+    color: var(--color-accent-soft);
+  }
+
+  .footer__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-h1);
+    color: var(--color-bg);
+    line-height: 1.1;
+    margin: 0 0 1.5rem;
+    max-width: 18ch;
+    letter-spacing: -0.01em;
+  }
+
+  .footer__text {
+    color: rgba(245, 241, 234, 0.78);
+    font-size: 1.0625rem;
+    max-width: 56ch;
+    margin: 0 0 2.5rem;
+    line-height: 1.65;
+  }
+
+  .footer__actions {
+    margin-bottom: 4rem;
+  }
+
+  .footer__bottom {
+    border-top: 1px solid rgba(245, 241, 234, 0.15);
+    padding-top: 1.5rem;
+    font-family: var(--font-ui);
+    font-size: 0.8125rem;
+    color: rgba(245, 241, 234, 0.55);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+  }
+
+  .footer__brand {
+    font-weight: 500;
+    color: rgba(245, 241, 234, 0.75);
+  }
+
+  .footer__sep {
+    color: rgba(245, 241, 234, 0.3);
+  }
+</style>

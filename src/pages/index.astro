@@ -1,0 +1,61 @@
+---
+import { getCollection, render } from "astro:content";
+import Landing from "../layouts/Landing.astro";
+import Hero from "../components/Hero.astro";
+import SideNav from "../components/SideNav.astro";
+import Section from "../components/Section.astro";
+import Footer from "../components/Footer.astro";
+
+const all = await getCollection("propuesta");
+const sorted = all.sort((a, b) => a.data.order - b.data.order);
+const visible = sorted.filter((s) => !s.data.draft);
+
+const cover = visible.find((s) => s.data.order === 1);
+const sections = visible.filter((s) => s.data.order !== 1);
+
+const navItems = sorted.map((s) => ({
+  order: s.data.order,
+  slug: s.data.slug,
+  shortTitle: s.data.shortTitle ?? s.data.title,
+  draft: s.data.draft,
+}));
+
+const renderedSections = await Promise.all(
+  sections.map(async (entry) => {
+    const { Content } = await render(entry);
+    return { data: entry.data, Content };
+  })
+);
+---
+
+<Landing
+  title="Eco Paseo San Francisco — Propuesta de intervención urbana"
+  description="Recuperar un terreno baldío sobre Av. San Francisco km 3,5 (La Rioja) y convertirlo en un paseo comercial ecológico al servicio de la comunidad."
+>
+  <SideNav slot="nav" items={navItems} />
+
+  <Hero
+    slug={cover?.data.slug ?? "presentacion"}
+    eyebrow={cover?.data.eyebrow ?? "Propuesta de intervención urbana"}
+    title={cover?.data.title ?? "Eco Paseo San Francisco"}
+    lead={cover?.data.lead ?? "Propuesta de intervención urbana — Municipalidad de La Rioja."}
+    image="/images/portada.jpg"
+    imageAlt="Vista nocturna de un paseo comercial ecológico iluminado con luces cálidas y vegetación"
+  />
+
+  {
+    renderedSections.map(({ data, Content }, idx) => (
+      <Section
+        slug={data.slug}
+        order={data.order}
+        title={data.title}
+        eyebrow={data.eyebrow}
+        alt={idx % 2 === 0}
+      >
+        <Content />
+      </Section>
+    ))
+  }
+
+  <Footer />
+</Landing>

@@ -1,0 +1,112 @@
+---
+interface Props {
+  slug: string;
+  order: number;
+  title: string;
+  eyebrow?: string;
+  alt?: boolean;
+}
+
+const { slug, order, title, eyebrow, alt = false } = Astro.props;
+const orderLabel = String(order).padStart(2, "0");
+---
+
+<section
+  id={slug}
+  class:list={["section", { "section--alt": alt }]}
+  data-slug={slug}
+  aria-labelledby={`heading-${slug}`}
+>
+  <div class="section__inner">
+    <header class="section__head">
+      <span class="section__eyebrow">
+        <span class="section__order">{orderLabel}</span>
+        {eyebrow && <span class="section__eyebrow-text">{eyebrow}</span>}
+      </span>
+      <h1 id={`heading-${slug}`} class="section__title">{title}</h1>
+    </header>
+    <div class="section__body prose">
+      <slot />
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding: var(--space-section) 0;
+    background: var(--color-bg);
+    position: relative;
+  }
+
+  .section--alt {
+    background: var(--color-bg-alt);
+  }
+
+  .section__inner {
+    width: 100%;
+    max-width: var(--max-wide);
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+  }
+
+  .section__head {
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+    border-bottom: 1px solid var(--color-rule);
+    padding-bottom: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .section__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    font-family: var(--font-ui);
+    font-size: var(--fs-eyebrow);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  .section__order {
+    font-variant-numeric: tabular-nums;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    padding: 0.25rem 0.5rem;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+
+  .section__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-h1);
+    line-height: 1.1;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+    max-width: 22ch;
+  }
+
+  .section__body :global(h2) {
+    font-size: var(--fs-h2);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .section__body :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .section__body :global(h3) {
+    font-size: var(--fs-h3);
+    color: var(--color-accent);
+    margin-top: 2rem;
+  }
+
+  .section__body :global(p) {
+    margin-bottom: 1.25rem;
+  }
+
+  .section__body :global(ul li) {
+    padding-left: 0.25rem;
+  }
+</style>

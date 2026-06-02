@@ -1,0 +1,226 @@
+---
+interface NavItem {
+  order: number;
+  slug: string;
+  shortTitle: string;
+  draft: boolean;
+}
+
+interface Props {
+  items: NavItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<aside class="sidenav" aria-label="Índice de la propuesta">
+  <div class="sidenav__inner">
+    <p class="sidenav__label">Índice</p>
+    <ol class="sidenav__list">
+      {
+        items.map((item) => (
+          <li class:list={["sidenav__item", { "sidenav__item--draft": item.draft }]}>
+            <a
+              href={`#${item.slug}`}
+              class="sidenav__link"
+              data-slug={item.slug}
+              aria-disabled={item.draft ? "true" : "false"}
+            >
+              <span class="sidenav__num">{String(item.order).padStart(2, "0")}</span>
+              <span class="sidenav__title">{item.shortTitle}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</aside>
+
+<button class="sidenav-toggle" type="button" aria-expanded="false" aria-controls="sidenav-mobile">
+  <span>Índice</span>
+  <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+</button>
+
+<style>
+  .sidenav {
+    position: sticky;
+    top: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    padding: 3rem 1.5rem;
+    border-right: 1px solid var(--color-rule);
+    background: var(--color-bg);
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .sidenav__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .sidenav__label {
+    font-family: var(--font-ui);
+    font-size: 0.6875rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-fg-soft);
+    margin: 0 0 0.5rem;
+  }
+
+  .sidenav__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sidenav__item {
+    margin: 0;
+  }
+
+  .sidenav__item--draft .sidenav__link {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .sidenav__link {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-ui);
+    font-size: 0.8125rem;
+    color: var(--color-fg-muted);
+    text-decoration: none;
+    border-radius: var(--radius-soft);
+    border-left: 2px solid transparent;
+    transition: color 0.2s, background 0.2s, border-color 0.2s;
+    line-height: 1.4;
+  }
+
+  .sidenav__link:hover {
+    color: var(--color-fg);
+    background: var(--color-bg-alt);
+  }
+
+  .sidenav__link.is-active {
+    color: var(--color-fg);
+    border-left-color: var(--color-accent);
+    background: var(--color-bg-alt);
+    font-weight: 500;
+  }
+
+  .sidenav__num {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-fg-soft);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  .sidenav__link.is-active .sidenav__num {
+    color: var(--color-accent);
+  }
+
+  .sidenav__title {
+    flex: 1;
+  }
+
+  /* Mobile toggle (hidden on desktop) */
+  .sidenav-toggle {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+    background: var(--color-bg-dark);
+    color: var(--color-bg);
+    border: none;
+    padding: 0.625rem 1rem;
+    font-family: var(--font-ui);
+    font-size: 0.8125rem;
+    letter-spacing: 0.05em;
+    border-radius: var(--radius-soft);
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  @media (max-width: 960px) {
+    .sidenav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 40;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      width: min(85vw, 320px);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .sidenav.is-open {
+      transform: translateX(0);
+    }
+
+    .sidenav-toggle {
+      display: inline-flex;
+    }
+  }
+</style>
+
+<script>
+  // Mobile open/close
+  const toggle = document.querySelector<HTMLButtonElement>(".sidenav-toggle");
+  const sidenav = document.querySelector<HTMLElement>(".sidenav");
+
+  toggle?.addEventListener("click", () => {
+    const open = sidenav?.classList.toggle("is-open");
+    toggle.setAttribute("aria-expanded", String(Boolean(open)));
+  });
+
+  // Close on link click (mobile)
+  sidenav?.querySelectorAll<HTMLAnchorElement>(".sidenav__link").forEach((link) => {
+    link.addEventListener("click", () => {
+      if (window.matchMedia("(max-width: 960px)").matches) {
+        sidenav.classList.remove("is-open");
+        toggle?.setAttribute("aria-expanded", "false");
+      }
+    });
+  });
+
+  // Scroll-spy: highlight active section in nav
+  const links = Array.from(
+    document.querySelectorAll<HTMLAnchorElement>(".sidenav__link[data-slug]")
+  );
+  const linksBySlug = new Map(links.map((l) => [l.dataset.slug, l]));
+  const sections = Array.from(
+    document.querySelectorAll<HTMLElement>(".section[data-slug]")
+  );
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const slug = (entry.target as HTMLElement).dataset.slug;
+        if (!slug) return;
+        const link = linksBySlug.get(slug);
+        if (!link) return;
+        if (entry.isIntersecting) {
+          links.forEach((l) => l.classList.remove("is-active"));
+          link.classList.add("is-active");
+        }
+      });
+    },
+    {
+      rootMargin: "-30% 0px -55% 0px",
+      threshold: 0,
+    }
+  );
+
+  sections.forEach((s) => observer.observe(s));
+</script>
