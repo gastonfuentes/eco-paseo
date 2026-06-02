@@ -2,65 +2,86 @@
  * Generate the propuesta PDF from the print route.
  *
  * Flow:
- *   1. Spawn `astro preview` against the freshly built `dist/`.
- *   2. Wait until the preview server is responding.
- *   3. Launch Puppeteer, render /propuesta-pdf, save the PDF into dist/.
- *   4. Shut the server down cleanly.
+ *   1. Serve the freshly built `dist/` from an in-process static server.
+ *   2. Launch Puppeteer, render /propuesta-pdf, save the PDF into dist/.
+ *   3. Close the server and exit.
+ *
+ * No child process is spawned: everything runs in this single Node process so
+ * there is nothing to leak. A previous version shelled out to `astro preview`,
+ * which left an orphaned server process holding the port and hung CI builds
+ * (Netlify) until their timeout.
  *
  * The PDF lands at dist/eco-paseo-san-francisco.pdf so the deployed site
  * serves it at /eco-paseo-san-francisco.pdf.
  */
 
-import { spawn, type ChildProcess } from "node:child_process";
-import { setTimeout as wait } from "node:timers/promises";
-import { resolve } from "node:path";
+import { createServer, type Server } from "node:http";
+import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { join, normalize, resolve, extname } from "node:path";
 import puppeteer from "puppeteer";
 
 const ROOT = resolve(process.cwd());
+const DIST = resolve(ROOT, "dist");
 const HOST = "127.0.0.1";
 const PORT = 4322; // distinto del dev (4321) para evitar choques locales
 const PRINT_URL = `http://${HOST}:${PORT}/propuesta-pdf`;
-const PDF_OUT = resolve(ROOT, "dist/eco-paseo-san-francisco.pdf");
+const PDF_OUT = join(DIST, "eco-paseo-san-francisco.pdf");
 
-function startPreview(): ChildProcess {
-  const proc = spawn(
-    "npx",
-    ["astro", "preview", "--host", HOST, "--port", String(PORT)],
-    {
-      cwd: ROOT,
-      stdio: ["ignore", "pipe", "pipe"],
-      env: process.env,
-    }
-  );
+const MIME: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".pdf": "application/pdf",
+  ".txt": "text/plain; charset=utf-8",
+};
 
-  proc.stdout?.on("data", (data) => {
-    const text = data.toString().trim();
-    if (text) console.log(`[preview] ${text}`);
-  });
+/**
+ * Map a request URL to a file inside dist/, serving index.html for directory
+ * routes (e.g. `/propuesta-pdf`). Path traversal outside dist/ is rejected.
+ */
+function resolveFile(urlPath: string): string | null {
+  const clean = decodeURIComponent(urlPath.split("?")[0].split("#")[0]);
+  let candidate = normalize(join(DIST, clean));
+  if (!candidate.startsWith(DIST)) return null; // traversal guard
 
-  proc.stderr?.on("data", (data) => {
-    const text = data.toString().trim();
-    if (text) console.error(`[preview:err] ${text}`);
-  });
-
-  return proc;
+  if (!extname(candidate)) {
+    candidate = join(candidate, "index.html"); // directory route -> index.html
+  }
+  return existsSync(candidate) ? candidate : null;
 }
 
-async function waitForServer(url: string, timeoutMs = 30000): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(url, { method: "GET" });
-      if (res.ok || res.status === 404) {
-        return;
-      }
-    } catch {
-      /* connection refused — keep waiting */
+function startServer(): Promise<Server> {
+  const server = createServer(async (req, res) => {
+    const file = resolveFile(req.url ?? "/");
+    if (!file) {
+      res.statusCode = 404;
+      res.end("Not found");
+      return;
     }
-    await wait(250);
-  }
-  throw new Error(`Preview server never responded at ${url}`);
+    try {
+      const body = await readFile(file);
+      res.setHeader("Content-Type", MIME[extname(file)] ?? "application/octet-stream");
+      res.end(body);
+    } catch {
+      res.statusCode = 500;
+      res.end("Server error");
+    }
+  });
+
+  return new Promise((res, rej) => {
+    server.once("error", rej);
+    server.listen(PORT, HOST, () => res(server));
+  });
 }
 
 async function generatePdf(): Promise<void> {
@@ -96,27 +117,29 @@ async function generatePdf(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  if (!existsSync(resolve(ROOT, "dist"))) {
+  if (!existsSync(DIST)) {
     throw new Error(
       "dist/ does not exist. Run `npm run build:site` (or `npm run build`) first."
     );
   }
 
-  console.log("[pdf] Starting astro preview…");
-  const server = startPreview();
+  console.log("[pdf] Starting static server…");
+  const server = await startServer();
+  console.log(`[pdf] Serving dist/ at http://${HOST}:${PORT}`);
 
   try {
-    await waitForServer(`http://${HOST}:${PORT}/`);
-    console.log("[pdf] Preview server is up.");
     await generatePdf();
   } finally {
-    server.kill("SIGTERM");
-    // Give the child a moment to clean up its own socket.
-    await wait(200);
+    await new Promise<void>((res) => server.close(() => res()));
   }
 }
 
-main().catch((err) => {
-  console.error("[pdf] Failed:", err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    // Force a clean exit so any lingering handle can't hang CI builds.
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("[pdf] Failed:", err);
+    process.exit(1);
+  });
