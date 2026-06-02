@@ -98,6 +98,24 @@ async function generatePdf(): Promise<void> {
     console.log(`[pdf] Navigating to ${PRINT_URL}`);
     await page.goto(PRINT_URL, { waitUntil: "networkidle0", timeout: 60000 });
 
+    // Figures use loading="lazy" for the web; in a non-scrolling PDF render
+    // those below the fold never load. Force every image eager and wait for
+    // them all to finish (or error) before snapshotting.
+    await page.evaluate(async () => {
+      const imgs = Array.from(document.querySelectorAll("img"));
+      await Promise.all(
+        imgs.map((img) => {
+          img.loading = "eager";
+          if (!img.complete) img.src = img.src; // kick off the load
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise<void>((res) => {
+            img.addEventListener("load", () => res(), { once: true });
+            img.addEventListener("error", () => res(), { once: true });
+          });
+        })
+      );
+    });
+
     // Give web fonts a beat to settle before snapshotting the PDF.
     await page.evaluateHandle("document.fonts.ready");
 
