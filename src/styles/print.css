@@ -141,6 +141,17 @@ body {
   color: #1a1a1a;
 }
 
+.print-disclaimer {
+  break-inside: avoid;
+  font-family: "Inter", sans-serif;
+  font-size: 8.5pt;
+  line-height: 1.5;
+  color: #6b6b6b;
+  border-top: 1px solid #c9bfae;
+  padding-top: 5mm;
+  margin-top: 8mm;
+}
+
 /* Avoid orphan headings */
 h1,
 h2,
