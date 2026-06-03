@@ -1,6 +1,6 @@
 /**
- * Capture preview screenshots of the landing and the print page.
- * Run after `npm run build:site`.
+ * Capture preview screenshots of the landing (desktop + mobile).
+ * Run after `npm run build`.
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
@@ -30,12 +30,6 @@ const SHOTS: Array<{
     name: "landing-mobile",
     url: `http://${HOST}:${PORT}/`,
     viewport: { width: 390, height: 844 },
-    fullPage: true,
-  },
-  {
-    name: "print-view",
-    url: `http://${HOST}:${PORT}/propuesta-pdf`,
-    viewport: { width: 794, height: 1123 },
     fullPage: true,
   },
 ];

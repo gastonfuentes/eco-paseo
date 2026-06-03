@@ -1,6 +1,4 @@
 ---
-import DownloadButton from "./DownloadButton.astro";
-
 interface Props {
   slug: string;
   eyebrow: string;
@@ -19,7 +17,6 @@ const { slug, eyebrow, title, lead, image, imageAlt = "" } = Astro.props;
     <h1 class="hero__title">{title}</h1>
     <p class="hero__lead">{lead}</p>
     <div class="hero__actions">
-      <DownloadButton href="/eco-paseo-san-francisco.pdf" label="Descargar propuesta" />
       <a href="#situacion-actual" class="hero__scroll">Leer la propuesta ↓</a>
     </div>
     <div class="hero__meta">
